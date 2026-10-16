@@ -26,12 +26,12 @@ jobs:
       - name: Build mod jar
         run: ./gradlew jar
 
-      # 列出子模块目录调试
-      - name: List jar folder
-        run: ls -R needsofnature/build
+      # 查找全部jar，打印位置
+      - name: Find all jar files
+        run: find . -name "*.jar"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: mod-output
-          path: needsofnature/build/libs/*.jar
+          path: ./**/*.jar

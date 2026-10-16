@@ -26,14 +26,19 @@ jobs:
       - name: Build mod jar
         run: ./gradlew jar
 
-      # 查找全部jar，打印路径用于日志排查
+      # 列出所有jar，方便看生成了哪些
       - name: Find all jar files
-        run: find . -name "*.jar"
+        run: find build/libs -name "*.jar"
 
-      # 只上传 build/libs 里不带-dev后缀的成品jar，排除dev调试包
+      # 复制所有不带-dev的jar到临时文件夹upload，dev包不复制
+      - name: Copy release jars (exclude dev)
+        run: |
+          mkdir -p upload
+          find build/libs -type f -name "*.jar" ! -name "*dev*.jar" -exec cp {} upload/ \;
+
+      # 上传临时文件夹里的成品jar
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: mod-output
-          path: build/libs/!(*dev).jar
-
+          path: upload/

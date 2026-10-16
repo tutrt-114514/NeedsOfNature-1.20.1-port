@@ -23,11 +23,15 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build mod
-        run: ./gradlew build
+      - name: Build mod jar
+        run: ./gradlew jar
+
+      # 列出子模块目录调试
+      - name: List jar folder
+        run: ls -R needsofnature/build
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: mod-output
-          path: build/libs/*.jar
+          path: needsofnature/build/libs/*.jar

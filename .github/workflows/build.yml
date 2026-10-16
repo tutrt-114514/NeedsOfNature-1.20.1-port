@@ -1,43 +1,50 @@
 name: Build Mod
-
 on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
   workflow_dispatch:
+
+env:
+  JAVA_VERSION: 17
+  MC_VERSION: 1.20.1
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout source
+      - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Setup JDK 21
-        uses: actions/setup-java@v5
         with:
-          java-version: '21'
-          distribution: 'temurin'
+          submodules: true
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
 
-      - name: Build mod jar
-        run: ./gradlew jar
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
 
-      # 全局查找所有jar，打印全部路径，不再限定build/libs
-      - name: Find all jar files
-        run: find . -name "*.jar"
+      - name: Clean & Build (Fabric + Forge双端打包)
+        run: ./gradlew clean build --no-daemon
 
-      # 新建upload文件夹，复制所有不含-dev的jar
-      - name: Copy release jars (exclude dev)
-        run: |
-          mkdir -p upload
-          find . -type f -name "*.jar" ! -name "*dev*.jar" -exec cp {} upload/ \;
-
-      - name: Upload artifact
+      - name: Upload compiled JAR artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: mod-output
-          path: upload/
+          name: mod-build-jars
+          path: |
+            **/build/libs/*.jar
+            !**/build/libs/*-dev.jar
+            !**/build/libs/*-sources.jar
+
+      - name: Upload test reports (构建失败时保留日志)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-reports
+          path: **/build/reports/

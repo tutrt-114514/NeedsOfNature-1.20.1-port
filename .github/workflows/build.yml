@@ -26,12 +26,14 @@ jobs:
       - name: Build mod jar
         run: ./gradlew jar
 
-      # 查找全部jar，打印位置
+      # 查找全部jar，打印路径用于日志排查
       - name: Find all jar files
         run: find . -name "*.jar"
 
+      # 只上传 build/libs 里不带-dev后缀的成品jar，排除dev调试包
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: mod-output
-          path: ./**/*.jar
+          path: build/libs/!(*dev).jar
+

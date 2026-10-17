@@ -3,7 +3,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
-  workflow_dispatch: # 支持网页手动点击运行，无需提交代码
+  workflow_dispatch:
 
 env:
   JAVA_VERSION: 17
@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu‑latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -27,27 +27,27 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-      # 云端执行完整构建，等价本地 ./gradlew clean build --no-daemon
       - name: Gradle clean build
         run: ./gradlew clean build --no-daemon --console=plain
 
-      # 上传编译产物到Action构件页面，网页可以直接下载jar
-      - name: Save build JAR artifacts
+      # 新建release文件夹，只复制不带-dev的正式jar
+      - name: Pick release jars (skip -dev)
+        run: |
+          mkdir -p release
+          find animationdirector/build/libs -maxdepth 1 -type f -name "*.jar" ! -name "*-dev.jar" -exec cp {} release/ \;
+          find needsofnature/build/libs -maxdepth 1 -type f -name "*.jar" ! -name "*-dev.jar" -exec cp {} release/ \;
+          ls -la release/
+
+      # 只上传release目录，这里面只有正式包
+      - name: Upload release jars
         uses: actions/upload-artifact@v4
         with:
-          name: compiled‑mod‑jars
-          path: |
-            animationdirector/build/libs/*.jar
-            needsofnature/build/libs/*.jar
-          exclude: |
-            **/*‑dev.jar
-            **/*‑sources.jar
-            **/*‑test.jar
+          name: compiled-mod-release-jars
+          path: release/
 
-      # 构建失败保存报告排错
       - name: Upload failure reports
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: build‑error‑reports
+          name: build-error-reports
           path: "**/build/reports/"

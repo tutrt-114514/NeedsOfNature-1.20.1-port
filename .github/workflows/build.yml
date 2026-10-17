@@ -6,7 +6,10 @@ on:
   workflow_dispatch:
 
 env:
-  JAVA_VERSION: 17
+  # 构建运行环境使用JDK21（满足Loom1.17.14要求）
+  JAVA_VERSION: 21
+  # 编译输出字节码目标依旧是Java17，兼容MC1.20.1
+  TARGET_JAVA: 17
 
 permissions:
   contents: read
@@ -18,8 +21,8 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Setup Temurin JDK 17
-        uses: actions/setup-java@v4
+      - name: Setup Temurin JDK 21
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
@@ -30,7 +33,7 @@ jobs:
       - name: Gradle clean build
         run: ./gradlew clean build --no-daemon --console=plain
 
-      # 新建release文件夹，只复制不带-dev的正式jar
+      # 筛选，只复制不带-dev的正式发布jar
       - name: Pick release jars (skip -dev)
         run: |
           mkdir -p release
@@ -38,7 +41,6 @@ jobs:
           find needsofnature/build/libs -maxdepth 1 -type f -name "*.jar" ! -name "*-dev.jar" -exec cp {} release/ \;
           ls -la release/
 
-      # 只上传release目录，这里面只有正式包
       - name: Upload release jars
         uses: actions/upload-artifact@v4
         with:
